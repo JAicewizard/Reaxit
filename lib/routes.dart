@@ -79,30 +79,10 @@ final List<GoRoute> routes = [
     ],
   ),
   GoRoute(
-    // This route is above the members route because
-    // the members path is a prefix of the albums path.
-    path: '/members/photos',
-    name: 'albums',
-    pageBuilder: (context, state) => CustomTransitionPage(
-      key: state.pageKey,
-      child: AlbumsScreen(),
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        return FadeTransition(opacity: animation, child: child);
-      },
-    ),
-    routes: [
-      GoRoute(
-        path: ':albumSlug',
-        name: 'album',
-        pageBuilder: (context, state) => MaterialPage(
-          key: state.pageKey,
-          child: AlbumScreen(
-            slug: state.params['albumSlug']!,
-            album: state.extra as ListAlbum?,
-          ),
-        ),
-      ),
-    ],
+    // This redirect is above the members route because
+    // the members path is a prefix of this albums path.
+    path: '/members/photos/:albumSlug',
+    redirect: (state) => '/albums/${state.params['albumSlug']}',
   ),
   GoRoute(
     path: '/members',
@@ -123,6 +103,30 @@ final List<GoRoute> routes = [
           child: ProfileScreen(
             pk: int.parse(state.params['memberPk']!),
             member: state.extra as ListMember?,
+          ),
+        ),
+      ),
+    ],
+  ),
+  GoRoute(
+    path: '/albums',
+    name: 'albums',
+    pageBuilder: (context, state) => CustomTransitionPage(
+      key: state.pageKey,
+      child: AlbumsScreen(),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(opacity: animation, child: child);
+      },
+    ),
+    routes: [
+      GoRoute(
+        path: ':albumSlug',
+        name: 'album',
+        pageBuilder: (context, state) => MaterialPage(
+          key: state.pageKey,
+          child: AlbumScreen(
+            slug: state.params['albumSlug']!,
+            album: state.extra as ListAlbum?,
           ),
         ),
       ),
