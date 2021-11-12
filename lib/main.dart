@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -18,8 +19,8 @@ import 'package:reaxit/push_notifications.dart';
 import 'package:reaxit/routes.dart';
 import 'package:reaxit/theme.dart';
 import 'package:reaxit/ui/widgets/error_center.dart';
+import 'package:reaxit/ui/widgets/push_notification_dialog.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 Future<void> main() async {
@@ -105,15 +106,15 @@ class _ThaliAppState extends State<ThaliApp> {
         if (uri != null && await canLaunch(uri.toString())) {
           await launch(uri.toString(), forceSafariVC: false);
         }
-      }
-
-      // Show a dialog if the notification doesn't have a url.
-      final navContext = _router.routerDelegate.navigatorKey.currentContext;
-      if (navContext != null) {
-        showDialog(
-          context: navContext,
-          builder: (_) => PushNotificationDialog(message),
-        );
+      } else {
+        // Show a dialog if the notification doesn't have a url.
+        final navContext = _router.routerDelegate.navigatorKey.currentContext;
+        if (navContext != null) {
+          showDialog(
+            context: navContext,
+            builder: (_) => PushNotificationDialog(message),
+          );
+        }
       }
     });
 
@@ -125,15 +126,15 @@ class _ThaliAppState extends State<ThaliApp> {
         if (uri != null && await canLaunch(uri.toString())) {
           await launch(uri.toString(), forceSafariVC: false);
         }
-      }
-
-      // Show a dialog if the notification doesn't have a url.
-      final navContext = _router.routerDelegate.navigatorKey.currentContext;
-      if (navContext != null) {
-        showDialog(
-          context: navContext,
-          builder: (_) => PushNotificationDialog(message),
-        );
+      } else {
+        // Show a dialog if the notification doesn't have a url.
+        final navContext = _router.routerDelegate.navigatorKey.currentContext;
+        if (navContext != null) {
+          showDialog(
+            context: navContext,
+            builder: (_) => PushNotificationDialog(message),
+          );
+        }
       }
     }
   }
