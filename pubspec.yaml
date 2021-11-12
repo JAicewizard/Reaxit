@@ -87,7 +87,7 @@ dependencies:
   firebase_messaging: ^10.0.9
 
   # Push notifications in app. 
-  overlay_support: ^1.2.1
+  flutter_local_notifications: ^9.1.0
 
   # Sticky headers for calendar.
   sticky_headers: ^0.2.0
@@ -98,6 +98,9 @@ dependencies:
   # Cached images.
   cached_network_image: ^3.1.0
   flutter_cache_manager: ^3.1.2
+
+  # Navigation.
+  go_router: ^2.2.4
 
 dev_dependencies:
   flutter_test:

@@ -13,7 +13,8 @@ String deviceRegistrationIdPreferenceName = 'deviceRegistrationId';
 /// Return whether pushnotifications have been set up successfully.
 Future<bool> registerPushNotifications(ApiRepository api) async {
   try {
-    final settings = await FirebaseMessaging.instance.requestPermission(
+    final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+    final settings = await _firebaseMessaging.requestPermission(
       alert: true,
       announcement: true,
       badge: true,
@@ -23,11 +24,16 @@ Future<bool> registerPushNotifications(ApiRepository api) async {
       sound: true,
     );
 
+    // Enable iOS notifications while an (incl. this) app is in the foreground.
+    await _firebaseMessaging.setForegroundNotificationPresentationOptions(
+      alert: true,
+    );
+
     if (settings.authorizationStatus != AuthorizationStatus.authorized) {
       return false;
     }
 
-    final token = await FirebaseMessaging.instance.getToken();
+    final token = await _firebaseMessaging.getToken();
     if (token == null) return false;
     return await registerPushNotificationsToken(api, token);
   } catch (_) {

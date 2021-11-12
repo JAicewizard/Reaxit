@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -104,8 +107,18 @@ class LogOutAuthEvent extends AuthEvent {}
 
 class LogInAuthEvent extends AuthEvent {}
 
-class AuthBloc extends Bloc<AuthEvent, AuthState> {
-  AuthBloc() : super(LoadingAuthState());
+class AuthBloc extends Bloc<AuthEvent, AuthState> with ChangeNotifier {
+  late final StreamSubscription _notifierListener;
+
+  AuthBloc() : super(LoadingAuthState()) {
+    _notifierListener = stream.listen((_) => notifyListeners());
+  }
+
+  @override
+  void dispose() {
+    _notifierListener.cancel();
+    super.dispose();
+  }
 
   @override
   Stream<AuthState> mapEventToState(AuthEvent event) async* {
