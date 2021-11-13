@@ -18,6 +18,7 @@ import 'package:reaxit/config.dart' as config;
 import 'package:reaxit/push_notifications.dart';
 import 'package:reaxit/routes.dart';
 import 'package:reaxit/theme.dart';
+import 'package:reaxit/ui/screens/login_screen.dart';
 import 'package:reaxit/ui/widgets/error_center.dart';
 import 'package:reaxit/ui/widgets/push_notification_dialog.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -55,7 +56,7 @@ class _ThaliAppState extends State<ThaliApp> {
   late final AuthBloc _authBloc;
   late final GoRouter _router;
 
-  /// Setup push notification handlers.
+  /// Set up push notification handlers.
   Future<void> _setupFirebaseMessaging() async {
     // Make sure firebase has been initialized.
     await _firebaseInitialization;
@@ -139,6 +140,148 @@ class _ThaliAppState extends State<ThaliApp> {
     }
   }
 
+  /// Redirect based on being logged in.
+  ///
+  /// If not logged in, redirect to login screen, passing the original location
+  /// as query parameter. If logged in and going to '/login', redirect to the
+  /// original location from the query parameter, or go to '/'.
+  String? _topLevelRedirect(GoRouterState state) {
+    final loggedIn = _authBloc.state is LoggedInAuthState;
+    final goingToLogin = state.location.startsWith('/login');
+
+    if (!loggedIn && !goingToLogin) {
+      return Uri(path: '/login', queryParameters: {
+        'from': state.location,
+      }).toString();
+    } else if (loggedIn && goingToLogin) {
+      return Uri.parse(state.location).queryParameters['from'] ?? '/';
+    } else {
+      return null;
+    }
+  }
+
+  /// Builder to surround or replace the [Navigator] provided by [GoRouter].
+  ///
+  /// This adds listeners for authentication status snackbars and setting up
+  /// push notifications. This surrounds the navigator with providers when
+  /// logged in, and replaces it with a [LoginScreen] when not logged in.
+  Widget _navigatorBuilder(BuildContext context, Widget? navigator) {
+    return BlocConsumer<AuthBloc, AuthState>(
+      listenWhen: (previous, current) {
+        if (previous is LoggedInAuthState && current is LoggedOutAuthState) {
+          return true;
+        } else if (current is FailureAuthState) {
+          return true;
+        } else if (current is LoggedInAuthState) {
+          return true;
+        }
+        return false;
+      },
+
+      // Listen to display login status snackbars and set up notifications.
+      listener: (context, state) async {
+        // Show a snackbar when the user logs out or logging in fails.
+        if (state is LoggedOutAuthState) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text('Logged out.'),
+          ));
+        } else if (state is FailureAuthState) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text(state.message ?? 'Logging in failed.'),
+          ));
+        }
+
+        // Setup push notifications.
+        if (state is LoggedInAuthState) {
+          // Make sure firebase has been initialized.
+          await _firebaseInitialization;
+
+          // Setup push notifications with the api.
+          await registerPushNotifications(
+            state.apiRepository,
+          );
+
+          // Update tokens to the api when they are refreshed.
+          FirebaseMessaging.instance.onTokenRefresh.listen(
+            (String token) => registerPushNotificationsToken(
+              state.apiRepository,
+              token,
+            ),
+          );
+        }
+      },
+
+      builder: (context, authState) {
+        // Build with Blocs provided when logged in.
+        if (authState is LoggedInAuthState) {
+          return RepositoryProvider.value(
+            value: authState.apiRepository,
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider(
+                  create: (_) => PaymentUserCubit(
+                    authState.apiRepository,
+                  )..load(),
+                  lazy: false,
+                ),
+                BlocProvider(
+                  create: (_) => FullMemberCubit(
+                    authState.apiRepository,
+                  )..load(),
+                  lazy: false,
+                ),
+                BlocProvider(
+                  create: (_) => WelcomeCubit(
+                    authState.apiRepository,
+                  )..load(),
+                  lazy: false,
+                ),
+                BlocProvider(
+                  create: (_) => CalendarCubit(
+                    authState.apiRepository,
+                  )..load(),
+                  lazy: false,
+                ),
+                BlocProvider(
+                  create: (_) => MemberListCubit(
+                    authState.apiRepository,
+                  )..load(),
+                  lazy: false,
+                ),
+                BlocProvider(
+                  create: (_) => AlbumListCubit(
+                    authState.apiRepository,
+                  )..load(),
+                  lazy: false,
+                ),
+                BlocProvider(
+                  create: (_) => SettingsCubit(
+                    authState.apiRepository,
+                    _firebaseInitialization,
+                  )..load(),
+                  lazy: false,
+                ),
+              ],
+              child: navigator!,
+            ),
+          );
+        } else if (authState is LoggedOutAuthState) {
+          // Don't show the navigator (which is animating from a logged-in
+          // stack towards only the login screen). This prevents getting
+          // `ProviderNotFoundException`s during the animation caused by
+          // the blocs no longer being provided after logging out.
+          // This means that there is no transition shown when logging out.
+          return const LoginScreen();
+          // TODO: This is hacky. There should be a neat way to handle this.
+        } else {
+          return navigator!;
+        }
+      },
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -149,155 +292,19 @@ class _ThaliAppState extends State<ThaliApp> {
         key: state.pageKey,
         child: Scaffold(body: ErrorCenter(state.error.toString())),
       ),
-      redirect: (GoRouterState state) {
-        final loggedIn = _authBloc.state is LoggedInAuthState;
-        final goingToLogin = state.location.startsWith('/login');
-
-        if (!loggedIn && !goingToLogin) {
-          return Uri(path: '/login', queryParameters: {
-            'from': state.location,
-          }).toString();
-        } else if (loggedIn && goingToLogin) {
-          return Uri.parse(state.location).queryParameters['from'] ?? '/';
-        } else {
-          return null;
-        }
-      },
+      redirect: _topLevelRedirect,
       observers: [SentryNavigatorObserver()],
       refreshListenable: _authBloc,
-      navigatorBuilder: (context, navigator) {
-        return BlocConsumer<AuthBloc, AuthState>(
-          listenWhen: (previous, current) {
-            if (previous is LoggedInAuthState &&
-                current is LoggedOutAuthState) {
-              return true;
-            } else if (previous is LoggingInAuthState &&
-                current is LoggedInAuthState) {
-              return true;
-            } else if (current is FailureAuthState) {
-              return true;
-            }
-            return false;
-          },
-
-          // Listen to display snackbars with login status.
-          listener: (context, state) {
-            if (state is LoggedOutAuthState) {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                behavior: SnackBarBehavior.floating,
-                content: Text('Logged out.'),
-              ));
-            } else if (state is LoggedInAuthState) {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                behavior: SnackBarBehavior.floating,
-                content: Text('Logged in.'),
-              ));
-            } else if (state is FailureAuthState) {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                behavior: SnackBarBehavior.floating,
-                content: Text(state.message ?? 'Logging in failed.'),
-              ));
-            }
-          },
-
-          // Build with Blocs provided when logged in.
-          builder: (context, authState) {
-            if (authState is LoggedInAuthState) {
-              return RepositoryProvider.value(
-                value: authState.apiRepository,
-                child: MultiBlocProvider(
-                  providers: [
-                    BlocProvider(
-                      create: (_) => PaymentUserCubit(
-                        authState.apiRepository,
-                      )..load(),
-                      lazy: false,
-                    ),
-                    BlocProvider(
-                      create: (_) => FullMemberCubit(
-                        authState.apiRepository,
-                      )..load(),
-                      lazy: false,
-                    ),
-                    BlocProvider(
-                      create: (_) => WelcomeCubit(
-                        authState.apiRepository,
-                      )..load(),
-                      lazy: false,
-                    ),
-                    BlocProvider(
-                      create: (_) => CalendarCubit(
-                        authState.apiRepository,
-                      )..load(),
-                      lazy: false,
-                    ),
-                    BlocProvider(
-                      create: (_) => MemberListCubit(
-                        authState.apiRepository,
-                      )..load(),
-                      lazy: false,
-                    ),
-                    BlocProvider(
-                      create: (_) => AlbumListCubit(
-                        authState.apiRepository,
-                      )..load(),
-                      lazy: false,
-                    ),
-                    BlocProvider(
-                      create: (_) => SettingsCubit(
-                        authState.apiRepository,
-                        _firebaseInitialization,
-                      )..load(),
-                      lazy: false,
-                    ),
-                  ],
-                  child: BlocListener<AuthBloc, AuthState>(
-                    // Listen for setting up pushnotifications.
-                    listener: (context, authState) async {
-                      if (authState is LoggedInAuthState) {
-                        // Make sure firebase has been initialized.
-                        await _firebaseInitialization;
-
-                        // Setup push notifications with the api.
-                        await registerPushNotifications(
-                          authState.apiRepository,
-                        );
-
-                        // Update tokens to the api when they are refreshed.
-                        FirebaseMessaging.instance.onTokenRefresh.listen(
-                          (String token) => registerPushNotificationsToken(
-                            authState.apiRepository,
-                            token,
-                          ),
-                        );
-                      }
-                    },
-                    child: navigator!,
-                  ),
-                ),
-              );
-            } else {
-              return navigator!;
-            }
-          },
-        );
-      },
+      navigatorBuilder: _navigatorBuilder,
     );
     _setupFirebaseMessaging();
   }
-
-  /// This key prevents initializing a new [MaterialApp] state and, through
-  /// that, a new [Router] state, that would otherwise unintentionally make
-  /// an additional call to [ThaliaRouterDelegate.setInitialRoutePath] on
-  /// authentication events.
-  final _materialAppKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ThemeBloc, ThemeMode>(
       builder: (context, themeMode) {
         return MaterialApp.router(
-          key: _materialAppKey,
           title: 'ThaliApp',
           theme: lightTheme,
           darkTheme: darkTheme,
