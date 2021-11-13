@@ -25,6 +25,7 @@ final List<GoRoute> routes = [
     name: 'welcome',
     pageBuilder: (context, state) => CustomTransitionPage(
       key: state.pageKey,
+      name: 'Welcome',
       child: WelcomeScreen(),
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
         return FadeTransition(opacity: animation, child: child);
@@ -36,6 +37,7 @@ final List<GoRoute> routes = [
     name: 'calendar',
     pageBuilder: (context, state) => CustomTransitionPage(
       key: state.pageKey,
+      name: 'Calendar',
       child: CalendarScreen(),
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
         return FadeTransition(opacity: animation, child: child);
@@ -47,6 +49,7 @@ final List<GoRoute> routes = [
         name: 'event',
         pageBuilder: (context, state) => MaterialPage(
           key: state.pageKey,
+          name: 'Event(${state.params['eventPk']})',
           child: EventScreen(
             pk: int.parse(state.params['eventPk']!),
             event: state.extra as Event?,
@@ -58,6 +61,7 @@ final List<GoRoute> routes = [
             name: 'event-admin',
             pageBuilder: (context, state) => MaterialPage(
               key: state.pageKey,
+              name: 'EventAdmin(${state.params['eventPk']})',
               child: EventAdminScreen(
                 pk: int.parse(state.params['eventPk']!),
               ),
@@ -68,6 +72,8 @@ final List<GoRoute> routes = [
             name: 'event-registration',
             pageBuilder: (context, state) => MaterialPage(
               key: state.pageKey,
+              name: 'Registration(event: ${state.params['eventPk']}, '
+                  'registration: ${(state.extra as EventRegistration).pk})',
               child: RegistrationScreen(
                 eventPk: int.parse(state.params['eventPk']!),
                 registrationPk: (state.extra as EventRegistration).pk,
@@ -89,6 +95,7 @@ final List<GoRoute> routes = [
     name: 'members',
     pageBuilder: (context, state) => CustomTransitionPage(
       key: state.pageKey,
+      name: 'Members',
       child: MembersScreen(),
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
         return FadeTransition(opacity: animation, child: child);
@@ -100,6 +107,7 @@ final List<GoRoute> routes = [
         name: 'member',
         pageBuilder: (context, state) => MaterialPage(
           key: state.pageKey,
+          name: 'Member(${state.params['memberPk']})',
           child: ProfileScreen(
             pk: int.parse(state.params['memberPk']!),
             member: state.extra as ListMember?,
@@ -113,6 +121,7 @@ final List<GoRoute> routes = [
     name: 'albums',
     pageBuilder: (context, state) => CustomTransitionPage(
       key: state.pageKey,
+      name: 'Albums',
       child: AlbumsScreen(),
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
         return FadeTransition(opacity: animation, child: child);
@@ -124,6 +133,7 @@ final List<GoRoute> routes = [
         name: 'album',
         pageBuilder: (context, state) => MaterialPage(
           key: state.pageKey,
+          name: 'Album(${state.params['albumSlug']})',
           child: AlbumScreen(
             slug: state.params['albumSlug']!,
             album: state.extra as ListAlbum?,
@@ -137,6 +147,7 @@ final List<GoRoute> routes = [
     name: 'settings',
     pageBuilder: (context, state) => CustomTransitionPage(
       key: state.pageKey,
+      name: 'Settings',
       child: SettingsScreen(),
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
         return FadeTransition(opacity: animation, child: child);
@@ -148,6 +159,7 @@ final List<GoRoute> routes = [
       name: 'food',
       pageBuilder: (context, state) => MaterialPage(
             key: state.pageKey,
+            name: 'Food(${(state.extra as Event?)?.foodEvent})',
             child: FoodScreen(
               pk: (state.extra as Event?)?.foodEvent,
               event: state.extra as Event?,
@@ -159,6 +171,7 @@ final List<GoRoute> routes = [
           name: 'food-admin',
           pageBuilder: (context, state) => MaterialPage(
             key: state.pageKey,
+            name: 'FoodAdmin(${state.extra})',
             child: FoodAdminScreen(
               pk: state.extra as int,
             ),
@@ -170,6 +183,7 @@ final List<GoRoute> routes = [
     name: 'login',
     pageBuilder: (context, state) => MaterialPage(
       key: state.pageKey,
+      name: 'Login',
       child: const LoginScreen(),
     ),
   ),
