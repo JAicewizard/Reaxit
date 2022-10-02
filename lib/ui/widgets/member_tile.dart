@@ -1,5 +1,6 @@
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
+import 'package:meta/meta_meta.dart';
 import 'package:reaxit/models/member.dart';
 import 'package:reaxit/ui/screens/profile_screen.dart';
 import 'package:reaxit/ui/widgets/cached_image.dart';
@@ -15,33 +16,11 @@ class MemberTile extends StatelessWidget {
       tappable: false,
       routeSettings: RouteSettings(name: 'Profile(${member.pk})'),
       transitionType: ContainerTransitionType.fadeThrough,
-      closedShape: const RoundedRectangleBorder(),
+      closedShape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(0.1))),
       closedBuilder: (context, openContainer) {
-        return Stack(
-          fit: StackFit.expand,
-          children: [
-            CachedImage(
-              imageUrl: member.photo.small,
-              placeholder: 'assets/img/default-avatar.jpg',
-            ),
-            const _BlackGradient(),
-            Align(
-              alignment: Alignment.bottomLeft,
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  member.displayName,
-                  style: Theme.of(context).primaryTextTheme.bodyText2,
-                ),
-              ),
-            ),
-            Positioned.fill(
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(onTap: openContainer),
-              ),
-            ),
-          ],
+        return const Material(
+          color: Colors.transparent,
         );
       },
       openBuilder: (_, __) => ProfileScreen(pk: member.pk, member: member),
