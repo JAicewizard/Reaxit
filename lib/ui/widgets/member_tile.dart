@@ -6,8 +6,8 @@ class MemberTile extends StatelessWidget {
     return Material(
       clipBehavior: Clip.antiAlias,
       color: Colors.white,
-      shape: const RoundedRectangleBorder(
-          /*borderRadius: BorderRadius.all(Radius.circular(0.1))*/),
+      // shape: const RoundedRectangleBorder(
+      // /*borderRadius: BorderRadius.all(Radius.circular(0.1))*/),
       child: Builder(
         builder: (BuildContext context) {
           return const Material(
