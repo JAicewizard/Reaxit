@@ -31,18 +31,15 @@ class ThaliApp extends StatelessWidget {
 class MemberTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Material(
+    return PhysicalModel(
+      shape: BoxShape.rectangle,
       clipBehavior: Clip.antiAlias,
-      color: Colors.white,
-      // shape: const RoundedRectangleBorder(
-      // /*borderRadius: BorderRadius.all(Radius.circular(0.1))*/),
-      child: Builder(
-        builder: (BuildContext context) {
-          return const Material(
-            color: Colors.transparent,
-          );
-        },
-      ),
+      borderRadius: BorderRadius.zero,
+      elevation: 0,
+      color: Color(0xffffffff),
+      shadowColor: const Color(0x00000000),
+      child:
+          SizedBox.fromSize(size: Size(131.80952380952382, 131.80952380952382)),
     );
   }
 }
